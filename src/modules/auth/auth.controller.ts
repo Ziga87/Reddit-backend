@@ -1,23 +1,43 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, BadRequestException, ConflictException, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { AuthLoginDto } from "./dtos/LoginDto";
+import { AuthRegisterDto } from "./dtos/RegisterDto";
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
-  async login(@Body() body) {
-    const user = await this.authService.validateUser(body.username, body.password);
-    if (!user) {
-      return { message: 'Invalid credentials' };
+  @ApiOperation({ summary: 'Log in' })
+  @ApiResponse({ status: 200, description: 'The user has been successfully logged in.', schema: { example: { accessToken: 'your_jwt_token' } } })
+  @ApiResponse({ status: 401, description: 'Invalid email or password.' })
+  @ApiBody({ description: 'The login data', type: AuthLoginDto })
+  async login(@Body() authLoginDto: AuthLoginDto): Promise<{ accessToken: string }> {
+    try {
+      return await this.authService.login(authLoginDto);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw new UnauthorizedException('Invalid email or password');
+      }
+      throw new BadRequestException('An error occurred while logging in');
     }
-    const { access_token, user: userWithoutPassword } = await this.authService.login(user);
-    return { access_token, user: userWithoutPassword };
   }
 
   @Post('register')
-  async register(@Body() body) {
-    const user = await this.authService.register(body.username, body.email, body.password);
-    return user;
+  @ApiOperation({ summary: 'Register' })
+  @ApiResponse({ status: 201, description: 'The user has been successfully registered.', schema: { example: { accessToken: 'your_jwt_token' } } })
+  @ApiResponse({ status: 409, description: 'Email already exists.' })
+  @ApiBody({ description: 'The registration data', type: AuthRegisterDto })
+  async register(@Body() authRegisterDto: AuthRegisterDto): Promise<{ accessToken: string }> {
+    try {
+      return await this.authService.register(authRegisterDto);
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        throw new ConflictException('Email already exists');
+      }
+      throw new BadRequestException('An error occurred while registering');
+    }
   }
 }

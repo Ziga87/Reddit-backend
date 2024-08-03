@@ -1,34 +1,36 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma.service';
-import { User } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
+import { AuthLoginDto } from "./dtos/LoginDto";
+import { AuthRegisterDto } from "./dtos/RegisterDto";
 
 @Injectable()
 export class AuthService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly jwtService: JwtService,
-  ) {}
+  constructor(private readonly prisma: PrismaService, private readonly jwtService: JwtService) {}
 
-  async validateUser(username: string, pass: string): Promise<any> {
-    const user = await this.prisma.user.findUnique({ where: { username } });
-    if (user && await bcrypt.compare(pass, user.password)) {
-      const { password, ...result } = user;
-      return result;
+  async login(authLoginDto: AuthLoginDto): Promise<{ accessToken: string }> {
+    const { email, password } = authLoginDto;
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      throw new UnauthorizedException('Invalid email or password');
     }
-    return null;
-  }
 
-  async login(user: any) {
     const payload = { username: user.username, sub: user.id };
-    return {
-      access_token: this.jwtService.sign(payload),
-      user,
-    };
+    const accessToken = this.jwtService.sign(payload);
+
+    return { accessToken };
   }
 
-  async register(username: string, email: string, password: string): Promise<any> {
+  async register(authRegisterDto: AuthRegisterDto): Promise<{ accessToken: string }> {
+    const { username, email, password } = authRegisterDto;
+    const existingUser = await this.prisma.user.findUnique({ where: { email } });
+
+    if (existingUser) {
+      throw new ConflictException('Email already exists');
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await this.prisma.user.create({
       data: {
@@ -37,7 +39,10 @@ export class AuthService {
         password: hashedPassword,
       },
     });
-    const { password: _, ...result } = user;
-    return result;
+
+    const payload = { username: user.username, sub: user.id };
+    const accessToken = this.jwtService.sign(payload);
+
+    return { accessToken };
   }
 }
