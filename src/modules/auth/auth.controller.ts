@@ -1,8 +1,15 @@
-import { Controller, Post, Body, BadRequestException, ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  BadRequestException,
+  ConflictException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
-import { AuthLoginDto } from "./dtos/LoginDto";
-import { AuthRegisterDto } from "./dtos/RegisterDto";
+import { AuthLoginDto } from './dtos/LoginDto';
+import { AuthRegisterDto } from './dtos/RegisterDto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -11,10 +18,16 @@ export class AuthController {
 
   @Post('login')
   @ApiOperation({ summary: 'Log in' })
-  @ApiResponse({ status: 200, description: 'The user has been successfully logged in.', schema: { example: { accessToken: 'your_jwt_token' } } })
+  @ApiResponse({
+    status: 200,
+    description: 'The user has been successfully logged in.',
+    schema: { example: { accessToken: 'your_jwt_token' } },
+  })
   @ApiResponse({ status: 401, description: 'Invalid email or password.' })
   @ApiBody({ description: 'The login data', type: AuthLoginDto })
-  async login(@Body() authLoginDto: AuthLoginDto): Promise<{ accessToken: string }> {
+  async login(
+    @Body() authLoginDto: AuthLoginDto,
+  ): Promise<{ accessToken: string }> {
     try {
       return await this.authService.login(authLoginDto);
     } catch (error) {
@@ -27,10 +40,16 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({ summary: 'Register' })
-  @ApiResponse({ status: 201, description: 'The user has been successfully registered.', schema: { example: { accessToken: 'your_jwt_token' } } })
+  @ApiResponse({
+    status: 201,
+    description: 'The user has been successfully registered.',
+    schema: { example: { accessToken: 'your_jwt_token' } },
+  })
   @ApiResponse({ status: 409, description: 'Email already exists.' })
   @ApiBody({ description: 'The registration data', type: AuthRegisterDto })
-  async register(@Body() authRegisterDto: AuthRegisterDto): Promise<{ accessToken: string }> {
+  async register(
+    @Body() authRegisterDto: AuthRegisterDto,
+  ): Promise<{ accessToken: string }> {
     try {
       return await this.authService.register(authRegisterDto);
     } catch (error) {

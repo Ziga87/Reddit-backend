@@ -1,13 +1,21 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma.service';
 import * as bcrypt from 'bcrypt';
-import { AuthLoginDto } from "./dtos/LoginDto";
-import { AuthRegisterDto } from "./dtos/RegisterDto";
+import { AuthLoginDto } from './dtos/LoginDto';
+import { AuthRegisterDto } from './dtos/RegisterDto';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService, private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   async login(authLoginDto: AuthLoginDto): Promise<{ accessToken: string }> {
     const { email, password } = authLoginDto;
@@ -23,9 +31,13 @@ export class AuthService {
     return { accessToken };
   }
 
-  async register(authRegisterDto: AuthRegisterDto): Promise<{ accessToken: string }> {
+  async register(
+    authRegisterDto: AuthRegisterDto,
+  ): Promise<{ accessToken: string }> {
     const { username, email, password } = authRegisterDto;
-    const existingUser = await this.prisma.user.findUnique({ where: { email } });
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
 
     if (existingUser) {
       throw new ConflictException('Email already exists');
