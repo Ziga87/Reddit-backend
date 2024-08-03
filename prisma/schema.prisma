@@ -1,0 +1,59 @@
+// schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String    @id @default(uuid())
+  username  String    @unique
+  email     String    @unique
+  password  String
+  createdAt DateTime  @default(now())
+  posts     Post[]
+  comments  Comment[]
+  votes     Vote[]
+}
+
+model Post {
+  id        Int       @id @default(autoincrement())
+  title     String
+  content   String
+  authorId  String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  author    User      @relation(fields: [authorId], references: [id])
+  comments  Comment[]
+  votes     Vote[]
+}
+
+model Comment {
+  id        Int       @id @default(autoincrement())
+  content   String
+  postId    Int
+  authorId  String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  post      Post      @relation(fields: [postId], references: [id])
+  author    User      @relation(fields: [authorId], references: [id])
+  votes     Vote[]
+}
+
+model Vote {
+  id        Int       @id @default(autoincrement())
+  value     Int
+  postId    Int?      // Nullable to allow votes on comments
+  commentId Int?      // Nullable to allow votes on posts
+  userId    String
+  createdAt DateTime  @default(now())
+  post      Post?     @relation(fields: [postId], references: [id])
+  comment   Comment?  @relation(fields: [commentId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([userId, postId, commentId]) // Ensure a user can only vote once per post/comment
+}
