@@ -1,9 +1,12 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { Comment, Prisma } from '@prisma/client';
-import { CommentCreateDto } from "./dtos/CommentCreateDto";
-import { CommentUpdateDto } from "./dtos/CommentUpdateDto";
-
+import { CommentCreateDto } from './dtos/CommentCreateDto';
+import { CommentUpdateDto } from './dtos/CommentUpdateDto';
 
 @Injectable()
 export class CommentsService {
@@ -26,24 +29,37 @@ export class CommentsService {
   }
 
   async getCommentById(commentId: number): Promise<Comment> {
-    const comment = await this.prisma.comment.findUnique({ where: { id: commentId } });
+    const comment = await this.prisma.comment.findUnique({
+      where: { id: commentId },
+    });
     if (!comment) {
       throw new NotFoundException('Comment not found');
     }
     return comment;
   }
 
-  async updateCommentById(commentId: number, updateData: CommentUpdateDto): Promise<Comment> {
-    const comment = await this.prisma.comment.findUnique({ where: { id: commentId } });
+  async updateCommentById(
+    commentId: number,
+    updateData: CommentUpdateDto,
+  ): Promise<Comment> {
+    const comment = await this.prisma.comment.findUnique({
+      where: { id: commentId },
+    });
     if (!comment) {
       throw new NotFoundException('Comment not found');
     }
 
     const updatePayload: Prisma.CommentUpdateInput = {
       content: updateData.content,
-      author: updateData.authorId ? { connect: { id: updateData.authorId } } : undefined,
-      post: updateData.postId ? { connect: { id: Number(updateData.postId) } } : undefined,
-      parent: updateData.parentId ? { connect: { id: Number(updateData.parentId) } } : undefined,
+      author: updateData.authorId
+        ? { connect: { id: updateData.authorId } }
+        : undefined,
+      post: updateData.postId
+        ? { connect: { id: Number(updateData.postId) } }
+        : undefined,
+      parent: updateData.parentId
+        ? { connect: { id: Number(updateData.parentId) } }
+        : undefined,
     };
 
     return this.prisma.comment.update({
@@ -53,7 +69,9 @@ export class CommentsService {
   }
 
   async deleteCommentById(commentId: number): Promise<Comment> {
-    const comment = await this.prisma.comment.findUnique({ where: { id: commentId } });
+    const comment = await this.prisma.comment.findUnique({
+      where: { id: commentId },
+    });
     if (!comment) {
       throw new NotFoundException('Comment not found');
     }
@@ -64,5 +82,26 @@ export class CommentsService {
 
   async getAllComments(): Promise<Comment[]> {
     return this.prisma.comment.findMany();
+  }
+
+  async getCommentsByPostId(postId: number): Promise<any[]> {
+    const comments = await this.prisma.comment.findMany({
+      where: { postId },
+      include: {
+        author: {
+          select: {
+            username: true,
+          },
+        },
+      },
+    });
+
+    return comments.map((comment) => ({
+      id: comment.id,
+      content: comment.content,
+      author: comment.author.username,
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+    }));
   }
 }

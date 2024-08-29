@@ -2,39 +2,40 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
-  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma.service';
-import * as bcrypt from 'bcrypt';
 import { AuthLoginDto } from './dtos/LoginDto';
 import { AuthRegisterDto } from './dtos/RegisterDto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly jwtService: JwtService,
+    private prisma: PrismaService,
+    private jwtService: JwtService,
   ) {}
 
-  async login(authLoginDto: AuthLoginDto): Promise<{ accessToken: string }> {
-    const { email, password } = authLoginDto;
+  async login(
+    loginDto: AuthLoginDto,
+  ): Promise<{ accessToken: string; userId: string }> {
+    const { email, password } = loginDto;
     const user = await this.prisma.user.findUnique({ where: { email } });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { username: user.username, sub: user.id };
+    const payload = { email: user.email, sub: user.id };
     const accessToken = this.jwtService.sign(payload);
 
-    return { accessToken };
+    return { accessToken, userId: user.id };
   }
 
   async register(
-    authRegisterDto: AuthRegisterDto,
-  ): Promise<{ accessToken: string }> {
-    const { username, email, password } = authRegisterDto;
+    registerDto: AuthRegisterDto,
+  ): Promise<{ accessToken: string; userId: string }> {
+    const { email, password, username } = registerDto;
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -44,17 +45,18 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
     const user = await this.prisma.user.create({
       data: {
-        username,
         email,
+        username,
         password: hashedPassword,
       },
     });
 
-    const payload = { username: user.username, sub: user.id };
+    const payload = { email: user.email, sub: user.id };
     const accessToken = this.jwtService.sign(payload);
 
-    return { accessToken };
+    return { accessToken, userId: user.id };
   }
 }

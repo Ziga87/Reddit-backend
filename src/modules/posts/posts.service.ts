@@ -1,8 +1,12 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { Post } from '@prisma/client';
-import { PostCreateDto } from "./dtos/PostCreateDto";
-import { PostUpdateDto } from "./dtos/PostUpdateDto";
+import { PostCreateDto } from './dtos/PostCreateDto';
+import { PostUpdateDto } from './dtos/PostUpdateDto';
 
 @Injectable()
 export class PostsService {
@@ -30,7 +34,10 @@ export class PostsService {
     return post;
   }
 
-  async updatePostById(postId: number, updateData: PostUpdateDto): Promise<Post> {
+  async updatePostById(
+    postId: number,
+    updateData: PostUpdateDto,
+  ): Promise<Post> {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!post) {
       throw new NotFoundException('Post not found');
@@ -56,7 +63,18 @@ export class PostsService {
     });
   }
 
-  async getAllPosts(): Promise<Post[]> {
-    return this.prisma.post.findMany();
+  async getAllPosts(): Promise<any[]> {
+    return this.prisma.post.findMany({
+      include: {
+        author: {
+          select: {
+            username: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc', // You can change 'createdAt' to any other field you want to order by
+      },
+    });
   }
 }

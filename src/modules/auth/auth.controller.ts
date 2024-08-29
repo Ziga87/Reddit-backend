@@ -21,13 +21,13 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'The user has been successfully logged in.',
-    schema: { example: { accessToken: 'your_jwt_token' } },
+    schema: { example: { accessToken: 'your_jwt_token', userId: 'your_user_id' } },
   })
   @ApiResponse({ status: 401, description: 'Invalid email or password.' })
   @ApiBody({ description: 'The login data', type: AuthLoginDto })
   async login(
     @Body() authLoginDto: AuthLoginDto,
-  ): Promise<{ accessToken: string }> {
+  ): Promise<{ accessToken: string; userId: string }> {
     try {
       return await this.authService.login(authLoginDto);
     } catch (error) {
@@ -43,13 +43,13 @@ export class AuthController {
   @ApiResponse({
     status: 201,
     description: 'The user has been successfully registered.',
-    schema: { example: { accessToken: 'your_jwt_token' } },
+    schema: { example: { accessToken: 'your_jwt_token', userId: 'your_user_id' } },
   })
   @ApiResponse({ status: 409, description: 'Email already exists.' })
   @ApiBody({ description: 'The registration data', type: AuthRegisterDto })
   async register(
     @Body() authRegisterDto: AuthRegisterDto,
-  ): Promise<{ accessToken: string }> {
+  ): Promise<{ accessToken: string; userId: string }> {
     try {
       return await this.authService.register(authRegisterDto);
     } catch (error) {
